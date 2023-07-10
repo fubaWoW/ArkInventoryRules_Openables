@@ -2,7 +2,27 @@
 local ITEM_OPENABLE = _G.ITEM_OPENABLE
 local debug = false
 
+local openableItems = {
+	178040,	-- Condensed Stygia
+	198395,	-- Dull Spined Clam
+	204339, -- Satchel of Coalescing Chaos
+	205423,	-- Shadowflame Residue Sack
+	205682	-- Large Shadowflame Residue Sack
+}
+
+local function tableContains(t, v)
+  for i = 1, #t do
+    if t[i] == v then
+      return true
+    end
+  end
+  return false
+end
+
+-- ItemLink = GetContainerItemLink(bagID, slotID)
 local GetContainerItemLink = GetContainerItemLink or (C_Container and C_Container.GetContainerItemLink)
+
+-- icon, itemCount, locked, quality, readable, lootable, itemLink, isFiltered, noValue, itemID, isBound = GetContainerItemInfo(bagID, slot)
 local GetContainerItemInfo = GetContainerItemInfo or (C_Container and C_Container.GetContainerItemInfo)
 
 function rule:OnEnable( )
@@ -26,10 +46,16 @@ function rule.Openable( ... )
 	if not ArkInventoryRules.Object.h or ArkInventoryRules.Object.bag_id == nil or ArkInventoryRules.Object.slot_id == nil or ArkInventoryRules.Object.class ~= "item" then
 		return false
 	end
-	
-	local blizzard_id = ArkInventory.InternalIdToBlizzardBagId( ArkInventoryRules.Object.loc_id, ArkInventoryRules.Object.bag_id )
-	
+
+	local blizzard_id = ArkInventory.InternalIdToBlizzardBagId( ArkInventoryRules.Object.loc_id, ArkInventoryRules.Object.bag_id );
 	local isOpenable =  ArkInventory.TooltipContains( ArkInventoryRules.Tooltip, nil, ITEM_OPENABLE )
+
+	if (not isOpenable) then
+		local itemInfo = ArkInventory.CrossClient.GetContainerItemInfo(blizzard_id, ArkInventoryRules.Object.slot_id);
+		if itemInfo and itemInfo.itemID then
+			isOpenable = tableContains(openableItems, itemInfo.itemID)
+		end
+	end
 
 	if debug then
 		if isOpenable then
@@ -41,11 +67,11 @@ function rule.Openable( ... )
 			end
 		end
 	end
-	
+
 	if isOpenable then
 		return true
 	end
-	
+
   -- always return false at the end
   return false
 end
