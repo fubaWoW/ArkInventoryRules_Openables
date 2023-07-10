@@ -52,6 +52,19 @@ function rule.Openable( ... )
 
 	if (not isOpenable) then
 		local itemInfo = ArkInventory.CrossClient.GetContainerItemInfo(blizzard_id, ArkInventoryRules.Object.slot_id);
+		
+		-- itemInfo.iconFileID
+		-- itemInfo.stackCount
+		-- itemInfo.isLocked
+		-- itemInfo.quality
+		-- itemInfo.isReadable
+		-- itemInfo.hasLoot
+		-- itemInfo.hyperlink
+		-- itemInfo.isFiltered
+		-- itemInfo.hasNoValue
+		-- itemInfo.itemID
+		-- itemInfo.isBound
+		
 		if itemInfo and itemInfo.itemID then
 			isOpenable = tableContains(openableItems, itemInfo.itemID)
 		end
