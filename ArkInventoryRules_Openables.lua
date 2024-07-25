@@ -1,4 +1,7 @@
-﻿local rule = ArkInventoryRules:NewModule( "ArkInventoryRules_Openables" )
+﻿if not ArkInventory then return end
+if not ArkInventoryRules then return end
+
+local rule = ArkInventoryRules:NewModule( "ArkInventoryRules_Openables" )
 local ITEM_OPENABLE = _G.ITEM_OPENABLE
 local debug = false
 
@@ -10,13 +13,14 @@ local openableItems = {
 	205682	-- Large Shadowflame Residue Sack
 }
 
+-- check if "value {v}" already exists in "table {t}"
 local function tableContains(t, v)
-  for i = 1, #t do
-    if t[i] == v then
-      return true
+    for _, item in ipairs(t) do
+        if item == v then
+            return true
+        end
     end
-  end
-  return false
+    return false
 end
 
 -- ItemLink = GetContainerItemLink(bagID, slotID)
@@ -24,6 +28,22 @@ local GetContainerItemLink = GetContainerItemLink or (C_Container and C_Containe
 
 -- icon, itemCount, locked, quality, readable, lootable, itemLink, isFiltered, noValue, itemID, isBound = GetContainerItemInfo(bagID, slot)
 local GetContainerItemInfo = GetContainerItemInfo or (C_Container and C_Container.GetContainerItemInfo)
+
+
+
+local function debugInfo(blizzard_id, slot_id)
+    if not (blizzard_id and slot_id) then return end
+
+    local link = GetContainerItemLink(blizzard_id, slot_id)
+    if not link then return end
+
+    local itemInfo = {GetContainerItemInfo(blizzard_id, slot_id)}
+    --local name = GetItemInfo(link)
+
+    SELECTED_DOCK_FRAME:AddMessage(
+        string.format("|cff0080ffARK: |r%s |cffffff00isOpenable: |r|cff00ff00%s|r", link, tostring(isOpenable))
+    )
+end
 
 function rule:OnEnable( )
 
@@ -40,18 +60,22 @@ end
 
 function rule.Openable( ... )
 
-  local fn = "OPENABLE" -- your rule function name, needs to be set so that error messages are readable
+    local fn = "OPENABLE"
+    local obj = ArkInventoryRules.Object
 
-  -- always check for the hyperlink and that it's an actual item, not a spell (pet/mount)
-	if not ArkInventoryRules.Object.h or ArkInventoryRules.Object.bag_id == nil or ArkInventoryRules.Object.slot_id == nil or ArkInventoryRules.Object.class ~= "item" then
-		return false
-	end
+    if not (obj.h and obj.loc_id and obj.bag_id and obj.slot_id and obj.class == "item") then
+        return false
+    end
 
-	local blizzard_id = ArkInventory.InternalIdToBlizzardBagId( ArkInventoryRules.Object.loc_id, ArkInventoryRules.Object.bag_id );
-	local isOpenable =  ArkInventory.TooltipContains( ArkInventoryRules.Tooltip, nil, ITEM_OPENABLE )
+    local blizzard_id = ArkInventory.Util.getBlizzardBagIdFromStorageId(obj.loc_id, obj.bag_id)
+    local isOpenable = ArkInventory.TooltipContains(ArkInventoryRules.Tooltip, nil, ITEM_OPENABLE)
 
-	if (not isOpenable) then
-		local itemInfo = ArkInventory.CrossClient.GetContainerItemInfo(blizzard_id, ArkInventoryRules.Object.slot_id);
+    if isOpenable then
+        if debug then debugInfo(blizzard_id, obj.slot_id) end
+        return true
+    end
+
+    local itemInfo = ArkInventory.CrossClient.GetContainerItemInfo(blizzard_id, obj.slot_id)
 		
 		-- itemInfo.iconFileID
 		-- itemInfo.stackCount
@@ -64,27 +88,11 @@ function rule.Openable( ... )
 		-- itemInfo.hasNoValue
 		-- itemInfo.itemID
 		-- itemInfo.isBound
-		
-		if itemInfo and itemInfo.itemID then
-			isOpenable = tableContains(openableItems, itemInfo.itemID)
-		end
-	end
 
-	if debug then
-		if isOpenable then
-			local link = GetContainerItemLink(blizzard_id, ArkInventoryRules.Object.slot_id)
-			if link then
-				local icon, itemCount, locked, quality, readable, lootable, itemLink, isFiltered, noValue, itemID = GetContainerItemInfo(blizzard_id, ArkInventoryRules.Object.slot_id);
-				local name = GetItemInfo(link)
-				print("|cff0080ffARK: |r"..link.." |cffffff00isOpenable: |r".."|cff00ff00"..tostring(isOpenable).."|r")
-			end
-		end
-	end
+    if itemInfo and itemInfo.itemID and tableContains(openableItems, itemInfo.itemID) then
+        if debug then debugInfo(blizzard_id, obj.slot_id) end
+        return true
+    end
 
-	if isOpenable then
-		return true
-	end
-
-  -- always return false at the end
-  return false
+    return false
 end

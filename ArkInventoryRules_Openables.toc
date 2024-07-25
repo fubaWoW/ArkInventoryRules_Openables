@@ -1,6 +1,7 @@
-﻿## Interface: 100205
-## Interface-Classic: 11404
+﻿## Interface: 110002
+## Interface-Classic: 11503
 ## Interface-Wrath: 30403
+## Interface-Cata: 40400
 ## Title: Ark Inventory [Rules] Openables
 ## Notes: Openables Rule
 ## Author: fuba
